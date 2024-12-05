@@ -41,7 +41,4 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/buzbud-api:latest
 
-    # Step 6: Deploy to Docker Swarm
-    - name: Deploy to Docker Swarm
-      run: |
-        docker stack deploy -c docker-compose.yml buzbud
+   
