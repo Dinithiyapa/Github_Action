@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build, Push Docker Images, and Update Linode Server
 
 on:
   push:
@@ -40,3 +40,18 @@ jobs:
         context: ./api  # Path to the API's Dockerfile
         push: true
         tags: yapadinithi/buzbud-api-action:${{ github.sha }}  # Tag using commit hash
+
+  update_ssh_linode:
+    name: Telling Linode Server to Update
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+    # Step 6: Execute remote SSH commands
+    - name: Execute remote SSH commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: bash update.sh
