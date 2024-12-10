@@ -11,35 +11,35 @@ jobs:
 
     steps:
     # Step 1: Check out the repository
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     # Step 2: Log in to Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
     # Step 3: Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     # Step 4: Build and Push the Web Image
-      - name: Build and push web image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./web  # Path to the web app's Dockerfile
-          push: true
-          tags: yapadinithi/buzbud-web-action:v1.0.0  # Use version number as a tag (can be manually incremented)
+    - name: Build and push web image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./web  # Path to the web app's Dockerfile
+        push: true
+        tags: yapadinithi/buzbud-web-action:v1.0.0  # Use version number as a tag (can be manually incremented)
 
     # Step 5: Build and Push the API Image
-      - name: Build and push API image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./api  # Path to the API's Dockerfile
-          push: true
-          tags: yapadinithi/buzbud-api-action:v1.0.0  # Use version number as a tag (can be manually incremented)
+    - name: Build and push API image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./api  # Path to the API's Dockerfile
+        push: true
+        tags: yapadinithi/buzbud-api-action:v1.0.0  # Use version number as a tag (can be manually incremented)
 
   update_ssh_linode:
     name: Telling Linode Server to Update
@@ -47,11 +47,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Step 6: Execute remote SSH commands
-      - name: Execute remote SSH commands using password
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          script: bash update.sh
+    - name: Execute remote SSH commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Pull the latest Docker images
+          docker pull yapadinithi/buzbud-web-action:v1.0.0
+          docker pull yapadinithi/buzbud-api-action:v1.0.0
+          docker pull postgres:9.6  # Pull the latest PostgreSQL image
+
+          # Restart the services (assuming you use Docker Compose or restart containers directly)
+          docker-compose down
+          docker-compose up -d
