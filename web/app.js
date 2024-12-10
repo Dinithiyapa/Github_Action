@@ -1,61 +1,55 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+const express = require('express');
+const path = require('path');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
-// Your API URL configuration
-const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000'; // default to localhost if not set in environment variables
+// Dynamically set API URL from environment variables, fallback to default
+const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000';
 
-var routes = require('./routes/index');
+const routes = require('./routes/index');
 
-var app = express();
+const app = express();
 
-// view engine setup
+// View engine setup
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+app.set('view engine', 'jade'); // Or use Pug if upgraded
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+// Middleware
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Route setup
 app.use('/', routes);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
+// Catch 404 and forward to error handler
+app.use((req, res, next) => {
+  const err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
-// error handlers
-
-// development error handler
-// will print stacktrace
+// Error handlers
 if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render({
+  app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({
       message: err.message,
-      error: err
+      stack: err.stack, // Include stack trace for debugging
     });
   });
 }
 
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render({
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
     message: err.message,
-    error: {}
+    error: {}, // Hide stack trace in production
   });
 });
 
+// Export the API URL for use in other modules if necessary
+app.locals.apiUrl = apiUrl;
 
 module.exports = app;
