@@ -6,7 +6,7 @@ var pg = require('pg');
 var conString = process.env.DB; // "postgres://username:password@localhost/database";
 
 // Define API URL (ensure this points to your API container's URL)
-const apiUrl = process.env.API_URL || 'http://172.235.1.190:8080'; // Adjust to match API container
+const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000'; // Adjust to match API container
 // Routes
 
 // Root route
