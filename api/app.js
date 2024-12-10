@@ -2,10 +2,9 @@ var express = require('express');
 var app = express();
 var uuid = require('node-uuid');
 
-var pg = require('pg');
-var conString = process.env.DB; // "postgres://username:password@localhost/database";
+var pg = require('pg');// Database connection string from environment variables
+var conString = process.env.API_DB || 'postgres://user1:password1@172.235.1.190:5432/busbud_db'; // Use public IP for DB
 
-// Define API URL (ensure this points to your API container's URL)
 const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000'; // Adjust to match API container
 // Routes
 
