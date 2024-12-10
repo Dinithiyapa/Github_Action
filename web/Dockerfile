@@ -1,15 +1,14 @@
-FROM node:16 AS build
+FROM node:6.17.1 AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 
 RUN npm install
-RUN npm install node-fetch  # Install node-fetch
 
 COPY . .
 
-FROM node:16
+FROM node:6.17.1
 
 WORKDIR /app
 
