@@ -5,6 +5,9 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+// Your API URL configuration
+const apiUrl = process.env.API_URL || 'http://localhost:4000'; // default to localhost if not set in environment variables
+
 var routes = require('./routes/index');
 
 var app = express();
