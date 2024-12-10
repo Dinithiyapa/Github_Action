@@ -1,64 +1,57 @@
-name: Docker Compose CI/CD
+name: Build, Push Docker Images, and Update Linode Server
 
 on:
   push:
     branches:
-      - master  # Trigger when changes are pushed to master branch
+      - '*'  # Trigger the workflow on pushes to any branch
 
 jobs:
-  # Build and push the API image to Docker Hub
-  build-api:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code from repository
-        uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+    steps:
+    # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+    # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push API Docker image
-        uses: docker/build-push-action@v6
+    # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+    # Step 4: Build and Push the Web Image
+      - name: Build and push web image
+        uses: docker/build-push-action@v4
         with:
-          context: ./api
+          context: ./web  # Path to the web app's Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_stack_api:${{ github.sha }}
+          tags: yapadinithi/buzbud-web-action:v1.0.0  # Use version number as a tag (can be manually incremented)
 
-  # Build and push the Web image to Docker Hub
-  build-web:
+    # Step 5: Build and Push the API Image
+      - name: Build and push API image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./api  # Path to the API's Dockerfile
+          push: true
+          tags: yapadinithi/buzbud-api-action:v1.0.0  # Use version number as a tag (can be manually incremented)
+
+  update_ssh_linode:
+    name: Telling Linode Server to Update
+    needs: build-and-deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code from repository
-        uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+    # Step 6: Execute remote SSH commands
+      - name: Execute remote SSH commands using password
+        uses: appleboy/ssh-action@master
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-
-      - name: Build and push Web Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./web
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_stack_web:${{ github.sha }}
-
-  # Deployment to Linode via SSH
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [build-api, build-web]  # Waits for build jobs to finish
-    steps:
-      - name: Establish SSH connection to Linode
-        uses: appleboy/ssh-action@v2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-
-      - name: Pull latest images and restart Docker containers
-        run: |
-          ssh ${HOST} "docker-compose pull && docker-compose up -d"
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: bash update.sh
