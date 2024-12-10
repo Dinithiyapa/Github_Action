@@ -1,74 +1,69 @@
-var express = require('express');
-var app = express();
-var uuid = require('node-uuid');
+const express = require('express');
+const pg = require('pg'); // PostgreSQL client
+const uuid = require('node-uuid');
 
-var pg = require('pg');// Database connection string from environment variables
-var conString = process.env.API_DB || 'postgres://user1:password1@172.235.1.190:5432/busbud_db'; // Use public IP for DB
+const app = express();
 
-const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000'; // Adjust to match API container
+// Database connection string from environment variables
+const conString =
+  process.env.API_DB || 'postgres://user1:password1@172.235.1.190:5432/busbud_db';
+
+// API URL for external communication
+const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000';
+
+// Create a PostgreSQL client
+const client = new pg.Client(conString);
+
+// Connect to the database
+client.connect((err) => {
+  if (err) {
+    console.error('Could not connect to the database:', err.message);
+  } else {
+    console.log('Connected to the PostgreSQL database successfully.');
+  }
+});
+
 // Routes
 
 // Root route
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the API!',
-    available_routes: [
-      '/api/status'
-    ]
+    available_routes: ['/api/status'],
   });
 });
 
 // Status route
-app.get('/api/status', function(req, res) {
-  pg.connect(conString, function(err, client, done) {
-    if (err) {
-      return res.status(500).send('error fetching client from pool');
-    }
-    client.query('SELECT now() as time', [], function(err, result) {
-      // Release the client back to the pool
-      done();
-
-      if (err) {
-        return res.status(500).send('error running query');
-      }
-
-      return res.json({
-        request_uuid: uuid.v4(),
-        time: result.rows[0].time
-      });
-    });
-  });
-});
-
-// Catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
-
-// Error handlers
-
-// Development error handler
-// Will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
+app.get('/api/status', async (req, res) => {
+  try {
+    // Example query to check database status
+    const result = await client.query('SELECT NOW() as current_time');
     res.json({
-      message: err.message,
-      error: err
+      status: 'API is running',
+      database_time: result.rows[0].current_time,
     });
-  });
-}
+  } catch (error) {
+    console.error('Error fetching database status:', error.message);
+    res.status(500).json({
+      status: 'API is running, but database query failed',
+      error: error.message,
+    });
+  }
+});
 
-// Production error handler
-// No stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.json({
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unexpected error:', err.message);
+  res.status(500).json({
+    error: 'Internal server error',
     message: err.message,
-    error: {}
   });
+});
+
+// Start the server
+const PORT = process.env.API_PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`API is running on ${apiUrl} and listening on port ${PORT}`);
 });
 
 module.exports = app;
