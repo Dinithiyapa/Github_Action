@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 // Your API URL configuration
-const apiUrl = process.env.API_URL || 'http://172.19.0.2:4000/api/status'; // default to localhost if not set in environment variables
+const apiUrl = process.env.API_URL || 'http://172.235.1.190:4000/api/status'; // default to localhost if not set in environment variables
 
 var routes = require('./routes/index');
 
